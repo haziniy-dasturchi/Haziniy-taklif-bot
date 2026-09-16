@@ -1,0 +1,12 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	ignorecase = true
+[user]
+	name = Haziniy Manager
+	email = haziniy@example.com
+[remote "origin"]
+	url = https://github.com/haziniy-dasturchi/Haziniy-taklif-bot.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
