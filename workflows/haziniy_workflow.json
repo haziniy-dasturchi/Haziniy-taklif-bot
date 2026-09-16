@@ -1,0 +1,230 @@
+﻿{
+  "name": "HAZINIY | Feedback & Telegram Baza Tizimi",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -360,
+        100
+      ],
+      "id": "telegram-trigger-master",
+      "name": "Telegram Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "chat-check",
+              "leftValue": "={{ \.message.chat.type }}",
+              "rightValue": "private",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -120,
+        100
+      ],
+      "id": "if-private-or-group",
+      "name": "Shaxsiy chatmi yoki Guruh?"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Murojaat matni: {{ \Telegram Trigger.item.json.message.text || \Telegram Trigger.item.json.message.caption || 'Fayl/Ovozli xabar' }}",
+        "options": {
+          "systemMessage": "Sen \"HAZINIY ILM MASKANI\" o'quv markazining mijozlar bilan aloqa bo'yicha maslahatchisisan.\n\nQoidalar:\n1. Ota-onaga samimiy, xushmuomala va adolatli javob ber.\n2. Taklif bo'lsa: Rahmat aytib, ma'muriyat buni albatta ko'rib chiqishini bildir.\n3. Shikoyat bo'lsa: Noqulaylik uchun uzr so'rab, bu holat takrorlanmasligi uchun barcha zarur choralar ko'rilishini bildir."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        180,
+        -60
+      ],
+      "id": "ai-agent-private-responder",
+      "name": "Ota-onaga AI Javob Beruvchi"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        180,
+        140
+      ],
+      "id": "gemini-model-private-chat",
+      "name": "Google Gemini (Private)"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ \Telegram Trigger.item.json.message.chat.id }}",
+        "text": "={{ \.output }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        520,
+        -60
+      ],
+      "id": "send-reply-parent",
+      "name": "Ota-onaga Telegramdan yuborish"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Kelgan murojaat:\nKimdan: {{ \Telegram Trigger.item.json.message.from.first_name }} (@{{ \Telegram Trigger.item.json.message.from.username || 'username_yoq' }})\nChat turi: {{ \Telegram Trigger.item.json.message.chat.type }}\nXabar: {{ \Telegram Trigger.item.json.message.text || \Telegram Trigger.item.json.message.caption || 'Fayl/Ovozli xabar' }}\n\nUshbu murojaatni tahlil qilib, @haziniyfeedbackbaza kanali uchun chiroyli kartochka tayyorla.",
+        "options": {
+          "systemMessage": "Sen o'quv markazining sifat nazorati bo'yicha tahlilchisisan. Kelgan xabarni tahlil qilib, aynan quyidagi formatda tahlil kartochkasini chiqarib ber:\n\n📥 **YANGI MUROJAAT QABUL QILINDI**\n👤 **Murojaatchi:** [Ismi va username]\n💬 **Chat turi:** [Shaxsiy chat / Guruh]\n⚠️ **Darajasi:** [🔴 Kritik / 🟡 O'rta / 🟢 Taklif]\n📌 **Kategoriya:** [O'qituvchi / Sharoit / To'lov / Dars jadvali / Intizom / Boshqa]\n📝 **Murojaat matni:** \"[Xabar mazmuni]\"\n💡 **AI Tavsiyasi:** [Rahbariyat ko'rishi kerak bo'lgan 1-2 gaplik chora]"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        180,
+        340
+      ],
+      "id": "ai-agent-channel-logger",
+      "name": "Kanal uchun AI Tahlilchi"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        180,
+        540
+      ],
+      "id": "gemini-model-logger",
+      "name": "Google Gemini (Logger)"
+    },
+    {
+      "parameters": {
+        "chatId": "@haziniyfeedbackbaza",
+        "text": "={{ \.output }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        520,
+        340
+      ],
+      "id": "send-to-database-channel",
+      "name": "Kanalga Saqlash (@haziniyfeedbackbaza)"
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Shaxsiy chatmi yoki Guruh?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shaxsiy chatmi yoki Guruh?": {
+      "main": [
+        [
+          {
+            "node": "Ota-onaga AI Javob Beruvchi",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Kanal uchun AI Tahlilchi",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Kanal uchun AI Tahlilchi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini (Private)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Ota-onaga AI Javob Beruvchi",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ota-onaga AI Javob Beruvchi": {
+      "main": [
+        [
+          {
+            "node": "Ota-onaga Telegramdan yuborish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini (Logger)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Kanal uchun AI Tahlilchi",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kanal uchun AI Tahlilchi": {
+      "main": [
+        [
+          {
+            "node": "Kanalga Saqlash (@haziniyfeedbackbaza)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
